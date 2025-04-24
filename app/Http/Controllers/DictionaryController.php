@@ -10,43 +10,63 @@ use App\Models\Favorite;
 
 class DictionaryController extends Controller
 {
-    public function index(Request $request)
-    {
-        $request->validate([
-            'search' => 'sometimes|string',
-            'limit' => 'sometimes|integer|min:1|max:50'
-        ]);
+   public function index(Request $request)
+   {
+       $request->validate([
+           'search' => 'sometimes|string|min:2',
+           'limit' => 'sometimes|integer|min:1|max:50'
+       ]);
 
-        // Implementar lógica de busca local
-        // ...
+       $search = $request->query('search', '');
+       $limit = $request->query('limit', 10);
 
-        return response()->json([
-            'results' => [],
-            'totalDocs' => 0,
-            'page' => 1,
-            'totalPages' => 1,
-            'hasNext' => false,
-            'hasPrev' => false
-        ]);
-    }
+       $query = \App\Models\Word::where('language', 'en')
+           ->when($search, function ($query, $search) {
+               return $query->where('word', 'like', $search.'%');
+           });
+
+       $words = $query->orderBy('word')
+           ->paginate($limit);
+
+       return response()->json([
+           'results' => $words->pluck('word'),
+           'totalDocs' => $words->total(),
+           'page' => $words->currentPage(),
+           'totalPages' => $words->lastPage(),
+           'hasNext' => $words->hasMorePages(),
+           'hasPrev' => $words->currentPage() > 1,
+           'X-Cache' => 'MISS', // Implementar cache depois
+           'X-Response-Time' => round((microtime(true) - LARAVEL_START) * 1000).'ms'
+       ]);
+   }
 
     public function show(Request $request, $word)
-    {
-        // Registrar no histórico
-        History::create([
-            'user_id' => auth()->id(),
-            'word' => $word
-        ]);
+   {
+      // Registrar no histórico
+      History::create([
+         'user_id' => auth()->id(),
+         'word' => $word
+      ]);
 
-        // Buscar na Free Dictionary API
-        $response = Http::get("https://api.dictionaryapi.dev/api/v2/entries/en/{$word}");
+      $cacheKey = 'word_definition_'.$word;
+      $duration = now()->addHours(24); // Cache por 24 horas
 
-        if ($response->failed()) {
-            return response()->json(['message' => 'Word not found'], 404);
-        }
+      $response = Cache::remember($cacheKey, $duration, function () use ($word) {
+         $apiResponse = Http::timeout(3)
+               ->retry(3, 100)
+               ->get("https://api.dictionaryapi.dev/api/v2/entries/en/{$word}");
 
-        return $response->json();
-    }
+         return $apiResponse->successful() ? $apiResponse->json() : null;
+      });
+
+      if (!$response) {
+         return response()->json(['message' => 'Word not found'], 404);
+      }
+
+      return response()->json($response)
+         ->header('X-Cache', Cache::has($cacheKey) ? 'HIT' : 'MISS')
+         ->header('X-Response-Time', round((microtime(true) - LARAVEL_START) * 1000).'ms');
+   }
 
     public function favorite($word)
     {
