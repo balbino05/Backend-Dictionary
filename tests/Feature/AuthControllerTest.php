@@ -15,7 +15,8 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/auth/signup', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password'
+            'password' => 'password',
+            'password_confirmation' => 'password'
         ]);
 
         $response->assertStatus(201)
@@ -39,7 +40,8 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/auth/signup', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password'
+            'password' => 'password',
+            'password_confirmation' => 'password'
         ]);
 
         $response->assertStatus(422);

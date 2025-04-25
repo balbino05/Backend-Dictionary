@@ -3,50 +3,42 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Word;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ImportWords extends Command
 {
-    protected $signature = 'words:import {file : Path to the words dictionary file}';
-    protected $description = 'Import words from the dictionary file into the database';
+    protected $signature = 'words:import';
+    protected $description = 'Download and import words from the dictionary file';
 
     public function handle()
     {
-        $filePath = $this->argument('file');
+        $this->info('Downloading words dictionary...');
 
-        if (!File::exists($filePath)) {
-            $this->error("File not found: {$filePath}");
-            return 1;
-        }
+        $url = 'https://raw.githubusercontent.com/dwyl/english-words/master/words_dictionary.json';
+        $path = base_path('words_dictionary.json');
 
-        $words = json_decode(File::get($filePath), true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->error('Invalid JSON file');
-            return 1;
-        }
-
-        $this->info('Starting import...');
-        $bar = $this->output->createProgressBar(count($words));
-        $bar->start();
-
-        DB::beginTransaction();
         try {
-            foreach ($words as $word => $value) {
-                Word::firstOrCreate(['word' => $word]);
-                $bar->advance();
+            $response = Http::get($url);
+
+            if (!$response->successful()) {
+                $this->error('Failed to download words dictionary');
+                return 1;
             }
-            DB::commit();
+
+            File::put($path, $response->body());
+            $this->info('Words dictionary downloaded successfully');
+
+            $this->info('Running word seeder...');
+            $this->call('db:seed', ['--class' => 'WordSeeder']);
+
+            $this->info('Words imported successfully');
+            return 0;
         } catch (\Exception $e) {
-            DB::rollBack();
-            $this->error("\nError during import: " . $e->getMessage());
+            $this->error('Error importing words: ' . $e->getMessage());
+            Log::error('Error importing words: ' . $e->getMessage());
             return 1;
         }
-
-        $bar->finish();
-        $this->info("\nImport completed successfully!");
-        return 0;
     }
 }

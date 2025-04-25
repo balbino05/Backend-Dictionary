@@ -13,8 +13,8 @@ class DictionaryControllerTest extends TestCase
 {
     public function test_can_list_words()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        $userData = $this->createUserWithToken();
+        $this->withHeaders(['Authorization' => $userData['token']]);
 
         Word::create(['word' => 'test', 'language' => 'en']);
         Word::create(['word' => 'example', 'language' => 'en']);
@@ -34,8 +34,8 @@ class DictionaryControllerTest extends TestCase
 
     public function test_can_search_words()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        $userData = $this->createUserWithToken();
+        $this->withHeaders(['Authorization' => $userData['token']]);
 
         Word::create(['word' => 'test', 'language' => 'en']);
         Word::create(['word' => 'testing', 'language' => 'en']);
@@ -57,8 +57,8 @@ class DictionaryControllerTest extends TestCase
 
     public function test_can_get_word_definition()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        $userData = $this->createUserWithToken();
+        $this->withHeaders(['Authorization' => $userData['token']]);
 
         Word::create(['word' => 'test', 'language' => 'en']);
 
@@ -102,32 +102,32 @@ class DictionaryControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('histories', [
-            'user_id' => $user->id,
+            'user_id' => $userData['user']->id,
             'word' => 'test'
         ]);
     }
 
     public function test_can_favorite_word()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        $userData = $this->createUserWithToken();
+        $this->withHeaders(['Authorization' => $userData['token']]);
 
         $response = $this->postJson('/api/entries/en/test/favorite');
 
         $response->assertStatus(204);
         $this->assertDatabaseHas('favorites', [
-            'user_id' => $user->id,
+            'user_id' => $userData['user']->id,
             'word' => 'test'
         ]);
     }
 
     public function test_can_unfavorite_word()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        $userData = $this->createUserWithToken();
+        $this->withHeaders(['Authorization' => $userData['token']]);
 
         Favorite::create([
-            'user_id' => $user->id,
+            'user_id' => $userData['user']->id,
             'word' => 'test'
         ]);
 
@@ -135,7 +135,7 @@ class DictionaryControllerTest extends TestCase
 
         $response->assertStatus(204);
         $this->assertDatabaseMissing('favorites', [
-            'user_id' => $user->id,
+            'user_id' => $userData['user']->id,
             'word' => 'test'
         ]);
     }

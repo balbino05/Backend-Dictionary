@@ -53,6 +53,8 @@ class DictionaryController extends Controller
 
     public function show(Request $request, $word)
     {
+        $startTime = microtime(true);
+
         // Registrar no histórico
         History::create([
             'user_id' => auth()->id(),
@@ -75,11 +77,13 @@ class DictionaryController extends Controller
             return response()->json(['message' => 'Word not found'], 404);
         }
 
+        $responseTime = round((microtime(true) - $startTime) * 1000);
+
         return response()->json([
             'data' => $response,
             'meta' => [
                 'cache' => Cache::has($cacheKey) ? 'HIT' : 'MISS',
-                'responseTime' => round((microtime(true) - LARAVEL_START) * 1000).'ms'
+                'responseTime' => $responseTime . 'ms'
             ]
         ]);
     }
