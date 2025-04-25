@@ -2,73 +2,69 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Models\Word;
 use App\Models\User;
 use App\Models\History;
 use App\Models\Favorite;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class UserControllerTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_can_get_user_profile()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
-
-        $response = $this->getJson('/api/user/me');
+        $response = $this->getJson('/api/user');
 
         $response->assertStatus(200)
-            ->assertJsonStructure([
-                'id',
-                'name',
-                'email'
+            ->assertJson([
+                'data' => [
+                    'id' => $this->user->id,
+                    'name' => $this->user->name,
+                    'email' => $this->user->email
+                ]
             ]);
     }
 
     public function test_can_get_user_history()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        History::factory()->count(3)->create(['user_id' => $this->user->id]);
 
-        History::create([
-            'user_id' => $user->id,
-            'word' => 'test',
-            'searched_at' => now()
-        ]);
-
-        $response = $this->getJson('/api/user/me/history');
+        $response = $this->getJson('/api/user/history');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'results',
-                'totalDocs',
-                'previous',
-                'next',
-                'hasNext',
-                'hasPrev'
+                'data',
+                'meta' => [
+                    'current_page',
+                    'from',
+                    'last_page',
+                    'per_page',
+                    'to',
+                    'total'
+                ]
             ]);
     }
 
     public function test_can_get_user_favorites()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
+        $word = Word::factory()->create();
+        $this->user->favorites()->attach($word->id);
 
-        Favorite::create([
-            'user_id' => $user->id,
-            'word' => 'test'
-        ]);
-
-        $response = $this->getJson('/api/user/me/favorites');
+        $response = $this->getJson('/api/user/favorites');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'results',
-                'totalDocs',
-                'previous',
-                'next',
-                'hasNext',
-                'hasPrev'
+                'data',
+                'meta' => [
+                    'current_page',
+                    'from',
+                    'last_page',
+                    'per_page',
+                    'to',
+                    'total'
+                ]
             ]);
     }
 }

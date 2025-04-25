@@ -34,6 +34,15 @@ abstract class TestCase extends BaseTestCase
 
         // Setup Passport clients
         $this->setUpPassport();
+
+        // Create a test user
+        $this->user = User::factory()->create();
+
+        // Create a personal access client
+        $this->artisan('passport:install', ['--force' => true]);
+
+        // Authenticate the user
+        Passport::actingAs($this->user);
     }
 
     public function createApplication()

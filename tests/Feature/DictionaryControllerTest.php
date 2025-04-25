@@ -8,135 +8,103 @@ use App\Models\Word;
 use App\Models\Favorite;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class DictionaryControllerTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_can_list_words()
     {
-        $userData = $this->createUserWithToken();
-        $this->withHeaders(['Authorization' => $userData['token']]);
+        Word::factory()->count(5)->create();
 
-        Word::create(['word' => 'test', 'language' => 'en']);
-        Word::create(['word' => 'example', 'language' => 'en']);
-
-        $response = $this->getJson('/api/entries/en');
+        $response = $this->getJson('/api/words');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'results',
-                'totalDocs',
-                'previous',
-                'next',
-                'hasNext',
-                'hasPrev'
+                'data',
+                'meta' => [
+                    'current_page',
+                    'from',
+                    'last_page',
+                    'per_page',
+                    'to',
+                    'total'
+                ]
             ]);
     }
 
     public function test_can_search_words()
     {
-        $userData = $this->createUserWithToken();
-        $this->withHeaders(['Authorization' => $userData['token']]);
+        Word::factory()->create(['word' => 'test']);
+        Word::factory()->create(['word' => 'testing']);
+        Word::factory()->create(['word' => 'other']);
 
-        Word::create(['word' => 'test', 'language' => 'en']);
-        Word::create(['word' => 'testing', 'language' => 'en']);
-        Word::create(['word' => 'example', 'language' => 'en']);
-
-        $response = $this->getJson('/api/entries/en?search=test');
+        $response = $this->getJson('/api/words?search=test');
 
         $response->assertStatus(200)
+            ->assertJsonCount(2, 'data')
             ->assertJsonStructure([
-                'results',
-                'totalDocs',
-                'previous',
-                'next',
-                'hasNext',
-                'hasPrev'
-            ])
-            ->assertJsonCount(2, 'results');
+                'data',
+                'meta' => [
+                    'current_page',
+                    'from',
+                    'last_page',
+                    'per_page',
+                    'to',
+                    'total'
+                ]
+            ]);
     }
 
     public function test_can_get_word_definition()
     {
-        $userData = $this->createUserWithToken();
-        $this->withHeaders(['Authorization' => $userData['token']]);
+        $word = Word::factory()->create();
 
-        Word::create(['word' => 'test', 'language' => 'en']);
-
-        Http::fake([
-            'https://api.dictionaryapi.dev/api/v2/entries/en/test' => Http::response([
-                [
-                    'word' => 'test',
-                    'meanings' => [
-                        [
-                            'partOfSpeech' => 'noun',
-                            'definitions' => [
-                                ['definition' => 'A procedure for testing something.']
-                            ]
-                        ]
-                    ]
-                ]
-            ], 200)
-        ]);
-
-        $response = $this->getJson('/api/entries/en/test');
+        $response = $this->getJson("/api/words/{$word->id}");
 
         $response->assertStatus(200)
-            ->assertJsonStructure([
+            ->assertJson([
                 'data' => [
-                    [
-                        'word',
-                        'meanings' => [
-                            [
-                                'partOfSpeech',
-                                'definitions' => [
-                                    ['definition']
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                'meta' => [
-                    'cache',
-                    'responseTime'
+                    'id' => $word->id,
+                    'word' => $word->word,
+                    'definition' => $word->definition
                 ]
             ]);
-
-        $this->assertDatabaseHas('histories', [
-            'user_id' => $userData['user']->id,
-            'word' => 'test'
-        ]);
     }
 
     public function test_can_favorite_word()
     {
-        $userData = $this->createUserWithToken();
-        $this->withHeaders(['Authorization' => $userData['token']]);
+        $word = Word::factory()->create();
 
-        $response = $this->postJson('/api/entries/en/test/favorite');
+        $response = $this->postJson("/api/words/{$word->id}/favorite");
 
-        $response->assertStatus(204);
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Word favorited successfully'
+            ]);
+
         $this->assertDatabaseHas('favorites', [
-            'user_id' => $userData['user']->id,
-            'word' => 'test'
+            'user_id' => $this->user->id,
+            'word_id' => $word->id
         ]);
     }
 
     public function test_can_unfavorite_word()
     {
-        $userData = $this->createUserWithToken();
-        $this->withHeaders(['Authorization' => $userData['token']]);
+        $word = Word::factory()->create();
+        $this->user->favorites()->attach($word->id);
 
-        Favorite::create([
-            'user_id' => $userData['user']->id,
-            'word' => 'test'
-        ]);
+        $response = $this->deleteJson("/api/words/{$word->id}/favorite");
 
-        $response = $this->deleteJson('/api/entries/en/test/unfavorite');
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'Word unfavorited successfully'
+            ]);
 
-        $response->assertStatus(204);
         $this->assertDatabaseMissing('favorites', [
-            'user_id' => $userData['user']->id,
-            'word' => 'test'
+            'user_id' => $this->user->id,
+            'word_id' => $word->id
         ]);
     }
 }

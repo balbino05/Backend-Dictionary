@@ -16,7 +16,7 @@ class DictionaryController extends Controller
     {
         $search = $request->query('search', '');
         $limit = (int) $request->query('limit', 10);
-        $cursor = $request->query('cursor');
+        $page = (int) $request->query('page', 1);
 
         $query = Word::query();
 
@@ -24,30 +24,21 @@ class DictionaryController extends Controller
             $query->where('word', 'like', "{$search}%");
         }
 
-        if ($cursor) {
-            $cursorWord = Word::find($cursor);
-            if ($cursorWord) {
-                $query->where('id', '>', $cursorWord->id);
-            }
-        }
+        $totalDocs = $query->count();
+        $totalPages = ceil($totalDocs / $limit);
 
-        $words = $query->orderBy('id')
-            ->limit($limit + 1)
+        $words = $query->orderBy('word')
+            ->skip(($page - 1) * $limit)
+            ->take($limit)
             ->get();
-
-        $hasNext = $words->count() > $limit;
-        $words = $words->take($limit);
-
-        $nextCursor = $hasNext ? $words->last()->id : null;
-        $previousCursor = $cursor ? Word::where('id', '<', $cursor)->orderByDesc('id')->first()?->id : null;
 
         return response()->json([
             'results' => $words->pluck('word'),
-            'totalDocs' => Word::count(),
-            'previous' => $previousCursor,
-            'next' => $nextCursor,
-            'hasNext' => $hasNext,
-            'hasPrev' => $previousCursor !== null
+            'totalDocs' => $totalDocs,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'hasNext' => $page < $totalPages,
+            'hasPrev' => $page > 1
         ]);
     }
 
