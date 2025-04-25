@@ -1,0 +1,69 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dictionary-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dictionary-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: dictionary-nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - dictionary-network
+
+  db:
+    image: mysql:8.0
+    container_name: dictionary-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: dictionary
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: dictionary
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - dictionary-network
+
+  redis:
+    image: redis:alpine
+    container_name: dictionary-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - dictionary-network
+
+networks:
+  dictionary-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
