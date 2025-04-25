@@ -20,13 +20,10 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
         $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
 
-        // Run migrations for Passport tables
-        Artisan::call('migrate', [
-            '--database' => 'mysql',
-            '--path' => 'vendor/laravel/passport/database/migrations'
-        ]);
+        // Run Passport migrations
+        Artisan::call('migrate', ['--database' => 'mysql', '--path' => 'vendor/laravel/passport/database/migrations']);
 
-        // Set up Passport clients
+        // Setup Passport clients
         $this->setUpPassport();
     }
 

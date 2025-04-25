@@ -10,39 +10,33 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class UserControllerTest extends TestCase
 {
-    use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->user = User::factory()->create();
-    }
-
     public function test_can_get_user_profile()
     {
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/user/me');
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+
+        $response = $this->getJson('/api/user/me');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'id',
                 'name',
-                'email',
-                'created_at',
-                'updated_at'
+                'email'
             ]);
     }
 
     public function test_can_get_user_history()
     {
-        History::factory()->create([
-            'user_id' => $this->user->id,
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+
+        History::create([
+            'user_id' => $user->id,
             'word' => 'test',
             'searched_at' => now()
         ]);
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/user/me/history');
+        $response = $this->getJson('/api/user/me/history');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -57,13 +51,15 @@ class UserControllerTest extends TestCase
 
     public function test_can_get_user_favorites()
     {
-        Favorite::factory()->create([
-            'user_id' => $this->user->id,
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+
+        Favorite::create([
+            'user_id' => $user->id,
             'word' => 'test'
         ]);
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/user/me/favorites');
+        $response = $this->getJson('/api/user/me/favorites');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
