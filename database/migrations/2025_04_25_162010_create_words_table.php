@@ -14,10 +14,9 @@ return new class extends Migration
         Schema::create('words', function (Blueprint $table) {
             $table->id();
             $table->string('word');
-            $table->string('language')->default('en');
+            $table->string('language', 2);
             $table->timestamps();
         });
-
     }
 
     /**

@@ -7,44 +7,60 @@ use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function signup(RegisterRequest $request)
+    public function signup(RegisterRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
+        $token = $user->createToken('auth_token')->accessToken;
+
         return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user,
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ],
+                'token' => 'Bearer ' . $token
+            ],
+            'message' => 'User created successfully'
         ], 201);
     }
 
     public function signin(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $validated = $request->validated();
 
-        if (!auth()->attempt($credentials)) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+                'status' => 401
+            ], 401);
         }
 
-        $user = auth()->user();
         $token = $user->createToken('auth_token')->accessToken;
 
         return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'token' => 'Bearer ' . $token
-        ]);
+            'message' => 'User logged in successfully',
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ],
+                'token' => 'Bearer ' . $token
+            ]
+        ], 200);
     }
 }

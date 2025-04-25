@@ -3,14 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
+use Laravel\Passport\Client;
 
 class AuthTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -19,32 +17,116 @@ class AuthTest extends TestCase
 
     public function test_user_registration()
     {
-        $response = $this->postJson('/auth/signup', [
+        $email = 'test'.rand(1,1000).'@example.com';
+        $response = $this->postJson('/api/auth/signup', [
             'name' => 'Test User',
-            'email' => 'test'.rand(1,1000).'@example.com', // Email único
+            'email' => $email,
             'password' => 'password',
             'password_confirmation' => 'password'
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['id', 'name', 'token']);
+            ->assertJsonStructure([
+                'data' => [
+                    'user' => [
+                        'id',
+                        'name',
+                        'email'
+                    ],
+                    'token'
+                ],
+                'message'
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => $email,
+            'name' => 'Test User'
+        ]);
+    }
+
+    public function test_user_registration_with_invalid_data()
+    {
+        $response = $this->postJson('/api/auth/signup', [
+            'name' => '',
+            'email' => 'invalid-email',
+            'password' => 'short',
+            'password_confirmation' => 'different'
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'email', 'password']);
+    }
+
+    public function test_user_registration_with_duplicate_email()
+    {
+        $email = 'duplicate@example.com';
+        User::factory()->create(['email' => $email]);
+
+        $response = $this->postJson('/api/auth/signup', [
+            'name' => 'Test User',
+            'email' => $email,
+            'password' => 'password',
+            'password_confirmation' => 'password'
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
     }
 
     public function test_user_login()
     {
+        $email = 'test'.uniqid().'@example.com';
+        $password = 'password';
+
         $user = User::factory()->create([
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
+            'email' => $email,
+            'password' => Hash::make($password)
         ]);
 
-        $response = $this->postJson('/auth/signin', [
-            'email' => 'test@example.com',
-            'password' => 'password'
+        $response = $this->postJson('/api/auth/signin', [
+            'email' => $email,
+            'password' => $password
         ]);
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'id', 'name', 'token'
+                'message',
+                'data' => [
+                    'user' => [
+                        'id',
+                        'name',
+                        'email'
+                    ],
+                    'token'
+                ]
+            ])
+            ->assertJson([
+                'message' => 'User logged in successfully'
             ]);
+    }
+
+    public function test_user_login_with_invalid_credentials()
+    {
+        $response = $this->postJson('/api/auth/signin', [
+            'email' => 'invalid@example.com',
+            'password' => 'wrongpassword'
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'message' => 'Invalid credentials',
+                'status' => 401
+            ]);
+    }
+
+    public function test_user_login_with_invalid_data()
+    {
+        $response = $this->postJson('/api/auth/signin', [
+            'email' => 'invalid-email',
+            'password' => ''
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email', 'password']);
     }
 }
