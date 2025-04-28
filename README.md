@@ -1,147 +1,137 @@
 # Dictionary API
 
-A RESTful API for dictionary management with user authentication and word lookup.
+Uma API RESTful para gerenciamento de dicionário com autenticação de usuários e busca de palavras.
 
-## Technologies
+## 🚀 Tecnologias
 
-- PHP 8.2
-- Laravel 10
+- PHP 8.1+
+- Laravel 9.x
 - MySQL 8.0
+- Redis (para cache)
+- Swagger/OpenAPI para documentação
+- Laravel Passport para autenticação
+
+## 📋 Pré-requisitos
+
+- PHP >= 8.1
+- Composer
+- MySQL
 - Redis
-- Docker
-- OpenAPI 3.0
+- Node.js e NPM (opcional, para desenvolvimento frontend)
 
-## Installation
+## 🔧 Instalação
 
-### Using Docker (Recommended)
-
-1. Clone the repository:
+1. Clone o repositório:
 ```bash
-git clone https://github.com/yourusername/dictionary-api.git
-cd dictionary-api
+git clone https://github.com/seu-usuario/Backend-Dictionary.git
+cd Backend-Dictionary
 ```
 
-2. Copy the environment file:
-```bash
-cp .env.example .env
-```
-
-3. Update the environment variables in `.env`:
-```
-DB_CONNECTION=mysql
-DB_HOST=db
-DB_PORT=3306
-DB_DATABASE=dictionary
-DB_USERNAME=dictionary
-DB_PASSWORD=secret
-
-REDIS_HOST=redis
-REDIS_PASSWORD=null
-REDIS_PORT=6379
-```
-
-4. Start the containers:
-```bash
-docker-compose up -d
-```
-
-5. Install dependencies and run migrations:
-```bash
-docker-compose exec app composer install
-docker-compose exec app php artisan migrate
-```
-
-6. Import words:
-```bash
-docker-compose exec app php artisan words:import
-```
-
-### Manual Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/dictionary-api.git
-cd dictionary-api
-```
-
-2. Install dependencies:
+2. Instale as dependências do PHP:
 ```bash
 composer install
 ```
 
-3. Copy the environment file:
+3. Copie o arquivo de ambiente e configure suas variáveis:
 ```bash
 cp .env.example .env
 ```
 
-4. Update the environment variables in `.env`
+4. Configure o arquivo `.env` com suas credenciais de banco de dados:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=dictionary
+DB_USERNAME=seu_usuario
+DB_PASSWORD=sua_senha
 
-5. Generate application key:
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+```
+
+5. Gere a chave da aplicação:
 ```bash
 php artisan key:generate
 ```
 
-6. Run migrations:
+6. Execute as migrações do banco de dados:
 ```bash
 php artisan migrate
 ```
 
-7. Import words:
+7. Instale o Laravel Passport:
+```bash
+php artisan passport:install
+```
+
+8. Importe as palavras do dicionário:
 ```bash
 php artisan words:import
 ```
 
-## Usage
+## 🚀 Executando o projeto
 
-The API documentation is available in OpenAPI 3.0 format at `openapi.yaml`. You can use tools like Swagger UI or Postman to explore the API.
-
-### Authentication
-
-1. Register a new user:
+1. Inicie o servidor de desenvolvimento:
 ```bash
-curl -X POST http://localhost:8000/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{"name": "User", "email": "user@example.com", "password": "password"}'
+php artisan serve
 ```
 
-2. Login:
-```bash
-curl -X POST http://localhost:8000/api/auth/signin \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "password"}'
-```
+2. Acesse a documentação da API:
+- Interface Swagger UI: http://localhost:8000/api/documentation
+- JSON da documentação: http://localhost:8000/docs/api-docs.json
 
-Use the returned token in subsequent requests:
-```bash
-curl -X GET http://localhost:8000/api/entries/en \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+## 📚 Documentação da API
 
-## Features
+### Endpoints principais:
 
-- User authentication with JWT
-- Word lookup with caching
-- Search history
-- Favorites management
-- Pagination with cursors
-- OpenAPI documentation
-- Docker support
-- Unit tests
+- `GET /` - Mensagem de boas-vindas
+- `POST /auth/signup` - Registro de novo usuário
+- `POST /auth/signin` - Login de usuário
+- `GET /entries/en` - Lista de palavras do dicionário
+- `GET /entries/en/{word}` - Detalhes de uma palavra
+- `POST /entries/en/{word}/favorite` - Favoritar uma palavra
+- `DELETE /entries/en/{word}/unfavorite` - Desfavoritar uma palavra
+- `GET /user/me/history` - Histórico de palavras visualizadas
+- `GET /user/me/favorites` - Lista de palavras favoritas
 
-## Testing
+Para mais detalhes sobre os endpoints, parâmetros e respostas, consulte a documentação Swagger em `/api/documentation`.
 
-Run the tests with:
+## 🧪 Testes
+
+Execute os testes com:
 ```bash
 php artisan test
 ```
 
-## License
+## 🛠️ Comandos úteis
 
-This project is licensed under the MIT License.
+- Limpar cache:
+```bash
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+```
 
----
+- Regenerar documentação Swagger:
+```bash
+php artisan l5-swagger:generate
+```
 
-This is a challenge by [Coodesh](https://coodesh.com/)
+## 🤝 Contribuindo
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+> This is a challenge by [Coodesh](https://coodesh.com/)
 
 # Back-end Challenge - Dictionary
 
