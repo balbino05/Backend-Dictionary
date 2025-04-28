@@ -8,11 +8,14 @@ use App\Services\Contracts\HistoryServiceInterface;
 use App\Services\Contracts\FavoriteServiceInterface;
 use App\Http\Requests\UpdateUserRequest;
 use OpenApi\Annotations as OA;
+use App\Models\User;
+use App\Models\Word;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(
  *     name="Users",
- *     description="User management operations"
+ *     description="API Endpoints for user management"
  * )
  */
 class UserController extends Controller
@@ -163,24 +166,94 @@ class UserController extends Controller
         return $this->userService->delete($id);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/user",
+     *     tags={"Users"},
+     *     summary="Get user profile",
+     *     description="Returns the authenticated user's profile information",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User profile retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="created_at", type="string", format="date-time"),
+     *             @OA\Property(property="updated_at", type="string", format="date-time")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
     public function getProfile()
     {
-        return response()->json($this->userService->getProfile());
+        return response()->json(Auth::user());
     }
 
-    public function getHistory(Request $request)
+    /**
+     * @OA\Get(
+     *     path="/api/user/history",
+     *     tags={"Users"},
+     *     summary="Get user search history",
+     *     description="Returns the authenticated user's search history",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Search history retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="word", type="string", example="example"),
+     *                 @OA\Property(property="searched_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
+    public function getHistory()
     {
-        $limit = (int) $request->query('limit', 10);
-        $page = (int) $request->query('page', 1);
-
-        return response()->json($this->historyService->getUserHistory($limit, $page));
+        $user = Auth::user();
+        $history = $user->searchHistory()->orderBy('created_at', 'desc')->get();
+        return response()->json($history);
     }
 
-    public function getFavorites(Request $request)
+    /**
+     * @OA\Get(
+     *     path="/api/user/favorites",
+     *     tags={"Users"},
+     *     summary="Get user favorite words",
+     *     description="Returns the authenticated user's favorite words",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Favorite words retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="word", type="string", example="example"),
+     *                 @OA\Property(property="favorited_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
+    public function getFavorites()
     {
-        $limit = (int) $request->query('limit', 10);
-        $page = (int) $request->query('page', 1);
-
-        return response()->json($this->favoriteService->getUserFavorites($limit, $page));
+        $user = Auth::user();
+        $favorites = $user->favorites()->orderBy('created_at', 'desc')->get();
+        return response()->json($favorites);
     }
 }

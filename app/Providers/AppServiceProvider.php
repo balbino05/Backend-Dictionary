@@ -19,13 +19,15 @@ use App\Repositories\Contracts\FavoriteRepositoryInterface;
 use App\Repositories\Eloquent\FavoriteRepository;
 use App\Services\Contracts\FavoriteServiceInterface;
 use App\Services\FavoriteService;
+use App\Services\Contracts\AuthServiceInterface;
+use App\Services\AuthService;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register()
+    public function register(): void
     {
         // Word
         $this->app->bind(WordRepositoryInterface::class, WordRepository::class);
@@ -42,12 +44,17 @@ class AppServiceProvider extends ServiceProvider
         // Favorite
         $this->app->bind(FavoriteRepositoryInterface::class, FavoriteRepository::class);
         $this->app->bind(FavoriteServiceInterface::class, FavoriteService::class);
+
+        $this->app->bind(AuthServiceInterface::class, AuthService::class);
+
+        // Dictionary
+        $this->app->bind(\App\Services\Contracts\DictionaryServiceInterface::class, \App\Services\WordService::class);
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot()
+    public function boot(): void
     {
         //
     }

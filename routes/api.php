@@ -10,8 +10,11 @@ Route::get('/', function () {
 });
 
 Route::prefix('auth')->group(function () {
-    Route::post('/signup', [AuthController::class, 'signup']);
-    Route::post('/signin', [AuthController::class, 'signin']);
+    Route::post('/signup', [AuthController::class, 'register']);
+    Route::post('/signin', [AuthController::class, 'login']);
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api');
+    Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
+    Route::get('/me', [AuthController::class, 'me'])->middleware('auth:api');
 });
 
 Route::middleware('auth:api')->group(function () {
@@ -22,9 +25,9 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{word}/unfavorite', [DictionaryController::class, 'unfavorite']);
     });
 
-    Route::prefix('user/me')->group(function () {
-        Route::get('/', [UserController::class, 'profile']);
-        Route::get('/history', [UserController::class, 'history']);
-        Route::get('/favorites', [UserController::class, 'favorites']);
+    Route::prefix('user')->group(function () {
+        Route::get('/', [UserController::class, 'getProfile']);
+        Route::get('/history', [UserController::class, 'getHistory']);
+        Route::get('/favorites', [UserController::class, 'getFavorites']);
     });
 });

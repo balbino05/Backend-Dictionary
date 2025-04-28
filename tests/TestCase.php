@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Traits\PassportSetup;
+use Mockery;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -21,28 +22,45 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
         $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
 
-        // Check if Passport tables exist
-        $tables = ['oauth_auth_codes', 'oauth_access_tokens', 'oauth_refresh_tokens', 'oauth_clients', 'oauth_personal_access_clients'];
-        $missingTables = array_filter($tables, function($table) {
-            return !DB::select("SHOW TABLES LIKE '{$table}'");
-        });
+        // Mock the console output for passport:install
+        $mock = Mockery::mock('Illuminate\Console\OutputStyle');
+        $mock->shouldReceive('askQuestion')->andReturn(true);
+        $this->app->instance('Illuminate\Console\OutputStyle', $mock);
 
-        if (!empty($missingTables)) {
-            // Run Passport migrations only if tables don't exist
-            Artisan::call('migrate', ['--database' => 'mysql', '--path' => 'vendor/laravel/passport/database/migrations']);
+        // Run migrations if needed
+        if (!$this->checkIfTablesExist()) {
+            Artisan::call('migrate:fresh', ['--database' => 'mysql']);
+            Artisan::call('passport:install', ['--force' => true]);
         }
-
-        // Setup Passport clients
-        $this->setUpPassport();
 
         // Create a test user
         $this->user = User::factory()->create();
 
-        // Create a personal access client
-        $this->artisan('passport:install', ['--force' => true]);
-
         // Authenticate the user
         Passport::actingAs($this->user);
+    }
+
+    protected function checkIfTablesExist()
+    {
+        $tables = [
+            'users',
+            'words',
+            'favorites',
+            'histories',
+            'oauth_auth_codes',
+            'oauth_access_tokens',
+            'oauth_refresh_tokens',
+            'oauth_clients',
+            'oauth_personal_access_clients'
+        ];
+
+        foreach ($tables as $table) {
+            if (!DB::select("SHOW TABLES LIKE '{$table}'")) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function createApplication()
@@ -57,6 +75,11 @@ abstract class TestCase extends BaseTestCase
             'auth.providers.users.model' => User::class,
             'auth.defaults.guard' => 'api',
         ]);
+
+        $this->app->bind(
+            \App\Services\Contracts\WordServiceInterface::class,
+            \App\Services\WordService::class
+        );
 
         return $app;
     }
@@ -79,5 +102,11 @@ abstract class TestCase extends BaseTestCase
             Log::error('Error creating user token: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\Contracts\FavoriteRepositoryInterface;
+use App\Services\Contracts\FavoriteServiceInterface;
 
 class FavoriteService implements FavoriteServiceInterface
 {

@@ -6,8 +6,10 @@ use App\Repositories\Contracts\WordRepositoryInterface;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use App\Models\History;
+use App\Services\Contracts\WordServiceInterface;
+use App\Services\Contracts\DictionaryServiceInterface;
 
-class WordService implements WordServiceInterface
+class WordService implements WordServiceInterface, DictionaryServiceInterface
 {
     protected $wordRepository;
 
@@ -66,5 +68,10 @@ class WordService implements WordServiceInterface
         if (!empty($wordsToInsert)) {
             $this->wordRepository->create($wordsToInsert);
         }
+    }
+
+    public function search($search, $limit = 10, $page = 1)
+    {
+        return $this->searchWords($search, $limit, $page);
     }
 }
