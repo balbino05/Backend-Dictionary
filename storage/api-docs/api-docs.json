@@ -255,19 +255,19 @@
                 ]
             }
         },
-        "/api/dictionary": {
+        "/api/entries/en": {
             "get": {
                 "tags": [
                     "Dictionary"
                 ],
                 "summary": "Search for words",
-                "operationId": "9481954c1e1f5722b130cd9a3646a51d",
+                "operationId": "338c0646b8f2d2ced4ad8c1ac1968d6d",
                 "parameters": [
                     {
-                        "name": "q",
+                        "name": "search",
                         "in": "query",
                         "description": "Search query",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -300,14 +300,26 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "data": {
+                                        "results": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/Word"
+                                                "type": "string"
                                             }
                                         },
-                                        "meta": {
-                                            "$ref": "#/components/schemas/Pagination"
+                                        "totalDocs": {
+                                            "type": "integer"
+                                        },
+                                        "page": {
+                                            "type": "integer"
+                                        },
+                                        "totalPages": {
+                                            "type": "integer"
+                                        },
+                                        "hasNext": {
+                                            "type": "boolean"
+                                        },
+                                        "hasPrev": {
+                                            "type": "boolean"
                                         }
                                     },
                                     "type": "object"
@@ -319,69 +331,15 @@
                         "description": "Invalid input"
                     }
                 }
-            },
-            "post": {
-                "tags": [
-                    "Dictionary"
-                ],
-                "summary": "Create new dictionary entry",
-                "operationId": "2f5cd02e9b745a0e925710606a530312",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "word": {
-                                        "type": "string",
-                                        "example": "example"
-                                    },
-                                    "definition": {
-                                        "type": "string",
-                                        "example": "A sample definition"
-                                    },
-                                    "example": {
-                                        "type": "string",
-                                        "example": "This is an example sentence."
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Dictionary entry created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Word"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
-        "/api/dictionary/{word}": {
+        "/api/entries/en/{word}": {
             "get": {
                 "tags": [
                     "Dictionary"
                 ],
                 "summary": "Get word details",
-                "operationId": "2ce0ac24ae8945387e887ec595d65cc8",
+                "operationId": "b4bee13b5a3f26fd94265fc3a2aaa72f",
                 "parameters": [
                     {
                         "name": "word",
@@ -410,13 +368,13 @@
                 }
             }
         },
-        "/api/dictionary/{word}/favorite": {
+        "/api/entries/en/{word}/favorite": {
             "post": {
                 "tags": [
                     "Dictionary"
                 ],
                 "summary": "Add word to favorites",
-                "operationId": "82575acf9ab37e8163f29e32e92b8ed0",
+                "operationId": "97877dafd90bb407d759f1fce8977fa2",
                 "parameters": [
                     {
                         "name": "word",
@@ -457,13 +415,15 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/entries/en/{word}/unfavorite": {
             "delete": {
                 "tags": [
                     "Dictionary"
                 ],
                 "summary": "Remove word from favorites",
-                "operationId": "283738d87f44ebcaddca327467e0636e",
+                "operationId": "3921ebc75c78296071ab152fbb36533e",
                 "parameters": [
                     {
                         "name": "word",
@@ -636,6 +596,62 @@
                     },
                     "404": {
                         "description": "Dictionary entry not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/dictionary": {
+            "post": {
+                "tags": [
+                    "Dictionary"
+                ],
+                "summary": "Create new dictionary entry",
+                "operationId": "2f5cd02e9b745a0e925710606a530312",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "word": {
+                                        "type": "string",
+                                        "example": "example"
+                                    },
+                                    "definition": {
+                                        "type": "string",
+                                        "example": "A sample definition"
+                                    },
+                                    "example": {
+                                        "type": "string",
+                                        "example": "This is an example sentence."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Dictionary entry created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Word"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
                     },
                     "401": {
                         "description": "Unauthorized"
@@ -1040,6 +1056,15 @@
                     "hasPrev": {
                         "type": "boolean",
                         "example": false
+                    }
+                },
+                "type": "object"
+            },
+            "Error": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Error message"
                     }
                 },
                 "type": "object"

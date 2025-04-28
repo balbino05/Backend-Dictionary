@@ -40,5 +40,10 @@ use OpenApi\Annotations as OA;
  *     @OA\Property(property="hasNext", type="boolean", example=true),
  *     @OA\Property(property="hasPrev", type="boolean", example=false)
  * )
+ *
+ * @OA\Schema(
+ *     schema="Error",
+ *     @OA\Property(property="message", type="string", example="Error message")
+ * )
  */
 class OpenApi {}

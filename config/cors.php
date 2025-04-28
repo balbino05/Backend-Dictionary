@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'api/documentation', 'docs', 'oauth2-callback'],
+    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 
@@ -11,9 +11,9 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['x-cache', 'x-response-time'],
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => false,
 ];
