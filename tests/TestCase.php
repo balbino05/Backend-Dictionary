@@ -29,8 +29,20 @@ abstract class TestCase extends BaseTestCase
 
         // Run migrations if needed
         if (!$this->checkIfTablesExist()) {
+            // Apaga tabelas do passport se existirem
+            DB::statement('DROP TABLE IF EXISTS oauth_auth_codes');
+            DB::statement('DROP TABLE IF EXISTS oauth_access_tokens');
+            DB::statement('DROP TABLE IF EXISTS oauth_refresh_tokens');
+            DB::statement('DROP TABLE IF EXISTS oauth_clients');
+            DB::statement('DROP TABLE IF EXISTS oauth_personal_access_clients');
             Artisan::call('migrate:fresh', ['--database' => 'mysql']);
             Artisan::call('passport:install', ['--force' => true]);
+        } else {
+            // Só instala passport se não houver clients
+            $clients = DB::table('oauth_clients')->count();
+            if ($clients === 0) {
+                Artisan::call('passport:install', ['--force' => true]);
+            }
         }
 
         // Create a test user

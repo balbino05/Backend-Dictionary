@@ -22,4 +22,9 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function favorites()
+    {
+        return $this->belongsToMany(\App\Models\Word::class, 'favorites', 'user_id', 'word_id')->withTimestamps();
+    }
 }

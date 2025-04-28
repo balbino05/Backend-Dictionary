@@ -18,7 +18,7 @@ class DictionaryControllerTest extends TestCase
     {
         Word::factory()->count(5)->create();
 
-        $response = $this->getJson('/api/words');
+        $response = $this->getJson('/api/entries/en');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -40,7 +40,7 @@ class DictionaryControllerTest extends TestCase
         Word::factory()->create(['word' => 'testing']);
         Word::factory()->create(['word' => 'other']);
 
-        $response = $this->getJson('/api/words?search=test');
+        $response = $this->getJson('/api/entries/en?search=test');
 
         $response->assertStatus(200)
             ->assertJsonCount(2, 'data')
@@ -61,7 +61,7 @@ class DictionaryControllerTest extends TestCase
     {
         $word = Word::factory()->create();
 
-        $response = $this->getJson("/api/words/{$word->id}");
+        $response = $this->getJson("/api/entries/en/{$word->id}");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -77,7 +77,7 @@ class DictionaryControllerTest extends TestCase
     {
         $word = Word::factory()->create();
 
-        $response = $this->postJson("/api/words/{$word->id}/favorite");
+        $response = $this->postJson("/api/entries/en/{$word->id}/favorite");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -95,7 +95,7 @@ class DictionaryControllerTest extends TestCase
         $word = Word::factory()->create();
         $this->user->favorites()->attach($word->id);
 
-        $response = $this->deleteJson("/api/words/{$word->id}/favorite");
+        $response = $this->deleteJson("/api/entries/en/{$word->id}/unfavorite");
 
         $response->assertStatus(200)
             ->assertJson([

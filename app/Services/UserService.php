@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Services\Contracts\UserServiceInterface;
 
 class UserService implements UserServiceInterface
 {
