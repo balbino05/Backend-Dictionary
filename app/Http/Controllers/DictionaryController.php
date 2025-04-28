@@ -38,14 +38,14 @@ class DictionaryController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/dictionary",
+     *     path="/api/entries/en",
      *     summary="Search for words",
      *     tags={"Dictionary"},
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
      *         description="Search query",
-     *         required=true,
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
@@ -67,8 +67,12 @@ class DictionaryController extends Controller
      *         description="Successful operation",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Word")),
-     *             @OA\Property(property="meta", ref="#/components/schemas/Pagination")
+     *             @OA\Property(property="results", type="array", @OA\Items(type="string")),
+     *             @OA\Property(property="totalDocs", type="integer"),
+     *             @OA\Property(property="page", type="integer"),
+     *             @OA\Property(property="totalPages", type="integer"),
+     *             @OA\Property(property="hasNext", type="boolean"),
+     *             @OA\Property(property="hasPrev", type="boolean")
      *         )
      *     ),
      *     @OA\Response(
@@ -88,7 +92,7 @@ class DictionaryController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/dictionary/{word}",
+     *     path="/api/entries/en/{word}",
      *     summary="Get word details",
      *     tags={"Dictionary"},
      *     @OA\Parameter(
@@ -127,7 +131,7 @@ class DictionaryController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/dictionary/{word}/favorite",
+     *     path="/api/entries/en/{word}/favorite",
      *     summary="Add word to favorites",
      *     tags={"Dictionary"},
      *     security={{"bearerAuth": {}}},
@@ -162,7 +166,7 @@ class DictionaryController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/dictionary/{word}/favorite",
+     *     path="/api/entries/en/{word}/unfavorite",
      *     summary="Remove word from favorites",
      *     tags={"Dictionary"},
      *     security={{"bearerAuth": {}}},
