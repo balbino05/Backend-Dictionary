@@ -17,10 +17,13 @@ Route::prefix('auth')->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->middleware('auth:api');
 });
 
+Route::prefix('entries/en')->group(function () {
+    Route::get('/', [DictionaryController::class, 'index']);
+    Route::get('/{word}', [DictionaryController::class, 'show']);
+});
+
 Route::middleware('auth:api')->group(function () {
     Route::prefix('entries/en')->group(function () {
-        Route::get('/', [DictionaryController::class, 'index']);
-        Route::get('/{word}', [DictionaryController::class, 'show']);
         Route::post('/{word}/favorite', [DictionaryController::class, 'favorite']);
         Route::delete('/{word}/unfavorite', [DictionaryController::class, 'unfavorite']);
     });
