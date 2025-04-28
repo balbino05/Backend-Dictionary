@@ -42,7 +42,7 @@ class DictionaryController extends Controller
      *     summary="Search for words",
      *     tags={"Dictionary"},
      *     @OA\Parameter(
-     *         name="q",
+     *         name="search",
      *         in="query",
      *         description="Search query",
      *         required=true,
@@ -79,11 +79,11 @@ class DictionaryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = $request->input('q');
+        $search = $request->input('search');
         $limit = $request->input('limit', 10);
         $page = $request->input('page', 1);
 
-        return $this->wordService->search($query, $limit, $page);
+        return $this->wordService->search($search, $limit, $page);
     }
 
     /**
@@ -197,31 +197,6 @@ class DictionaryController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/dictionary",
-     *     summary="Get all dictionary entries",
-     *     tags={"Dictionary"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of dictionary entries",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/Dictionary")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized"
-     *     )
-     * )
-     */
-    public function getAll()
-    {
-        return $this->dictionaryService->getAll();
-    }
-
-    /**
-     * @OA\Get(
      *     path="/api/dictionary/{id}",
      *     summary="Get dictionary entry by ID",
      *     tags={"Dictionary"},
@@ -235,7 +210,7 @@ class DictionaryController extends Controller
      *     @OA\Response(
      *         response=200,
      *         description="Dictionary entry details",
-     *         @OA\JsonContent(ref="#/components/schemas/Dictionary")
+     *         @OA\JsonContent(ref="#/components/schemas/Word")
      *     ),
      *     @OA\Response(
      *         response=404,
@@ -269,7 +244,7 @@ class DictionaryController extends Controller
      *     @OA\Response(
      *         response=201,
      *         description="Dictionary entry created successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Dictionary")
+     *         @OA\JsonContent(ref="#/components/schemas/Word")
      *     ),
      *     @OA\Response(
      *         response=422,
@@ -309,7 +284,7 @@ class DictionaryController extends Controller
      *     @OA\Response(
      *         response=200,
      *         description="Dictionary entry updated successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Dictionary")
+     *         @OA\JsonContent(ref="#/components/schemas/Word")
      *     ),
      *     @OA\Response(
      *         response=404,

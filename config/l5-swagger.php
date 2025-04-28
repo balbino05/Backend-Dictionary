@@ -12,7 +12,7 @@ return [
     ],
 
     'routes' => [
-        'api' => 'api/documentation',
+        'api' => 'api/swagger',
         'docs' => 'docs',
         'oauth2_callback' => 'api/oauth2-callback',
         'middleware' => [
@@ -60,6 +60,6 @@ return [
     ],
 
     'constants' => [
-        'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://localhost:8000'),
+        'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://localhost:8001'),
     ],
 ];

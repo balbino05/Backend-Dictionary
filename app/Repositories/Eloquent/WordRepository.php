@@ -18,7 +18,7 @@ class WordRepository extends BaseRepository implements WordRepositoryInterface
         $query = $this->model->query();
 
         if ($search) {
-            $query->where('word', 'like', "{$search}%");
+            $query->where('word', 'like', "%{$search}%");
         }
 
         $totalDocs = $query->count();
@@ -32,7 +32,7 @@ class WordRepository extends BaseRepository implements WordRepositoryInterface
         return [
             'results' => $words->pluck('word'),
             'totalDocs' => $totalDocs,
-            'page' => $page,
+            'page' => (int)$page,
             'totalPages' => $totalPages,
             'hasNext' => $page < $totalPages,
             'hasPrev' => $page > 1
