@@ -70,13 +70,13 @@ abstract class TestCase extends BaseTestCase
         $app->make(Kernel::class)->bootstrap();
 
         // Configure authentication
-        config([
+        $app['config']->set([
             'auth.guards.api.driver' => 'passport',
             'auth.providers.users.model' => User::class,
             'auth.defaults.guard' => 'api',
         ]);
 
-        $this->app->bind(
+        $app->bind(
             \App\Services\Contracts\WordServiceInterface::class,
             \App\Services\WordService::class
         );
