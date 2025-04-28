@@ -12,7 +12,7 @@ return [
     ],
 
     'routes' => [
-        'api' => 'api/swagger',
+        'api' => 'api/documentation',
         'docs' => 'docs',
         'oauth2_callback' => 'api/oauth2-callback',
         'middleware' => [
@@ -57,9 +57,14 @@ return [
             'showRequestHeaders' => true,
             'showResponseHeaders' => true,
         ],
+        'validatorUrl' => null,
+        'middleware' => [
+            'before' => [],
+            'after' => [],
+        ],
     ],
 
     'constants' => [
-        'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://localhost:8001'),
+        'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://localhost:8000'),
     ],
 ];

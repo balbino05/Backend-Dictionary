@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'paths' => ['*'],
+    'paths' => ['*', 'api/*', 'sanctum/csrf-cookie', 'api/documentation', 'docs/*', 'oauth2-callback', 'api-docs/*'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => ['*'],
 
@@ -13,7 +13,9 @@ return [
 
     'exposed_headers' => ['x-cache', 'x-response-time'],
 
-    'max_age' => 0,
+    'max_age' => 86400,
 
     'supports_credentials' => false,
+
+    'paths_ignore' => [],
 ];
