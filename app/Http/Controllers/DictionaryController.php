@@ -3,21 +3,25 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
-use App\Models\History;
-use App\Models\Favorite;
-use App\Models\Word;
-use Illuminate\Support\Facades\DB;
 use App\Services\Contracts\WordServiceInterface;
+use App\Services\Contracts\HistoryServiceInterface;
+use App\Services\Contracts\FavoriteServiceInterface;
+use Illuminate\Support\Facades\Cache;
 
 class DictionaryController extends Controller
 {
     protected $wordService;
+    protected $historyService;
+    protected $favoriteService;
 
-    public function __construct(WordServiceInterface $wordService)
-    {
+    public function __construct(
+        WordServiceInterface $wordService,
+        HistoryServiceInterface $historyService,
+        FavoriteServiceInterface $favoriteService
+    ) {
         $this->wordService = $wordService;
+        $this->historyService = $historyService;
+        $this->favoriteService = $favoriteService;
     }
 
     public function index(Request $request)
@@ -32,6 +36,9 @@ class DictionaryController extends Controller
     public function show(Request $request, $word)
     {
         $startTime = microtime(true);
+        $cacheKey = 'word_definition_'.$word;
+        $isCached = Cache::has($cacheKey);
+
         $response = $this->wordService->getWordDefinition($word);
         $endTime = microtime(true);
 
@@ -42,26 +49,19 @@ class DictionaryController extends Controller
         }
 
         return response()->json($response)
-            ->header('x-cache', 'MISS')
+            ->header('x-cache', $isCached ? 'HIT' : 'MISS')
             ->header('x-response-time', round(($endTime - $startTime) * 1000));
     }
 
     public function favorite($word)
     {
-        Favorite::firstOrCreate([
-            'user_id' => auth()->id(),
-            'word' => $word
-        ]);
-
+        $this->favoriteService->addFavorite($word);
         return response()->noContent();
     }
 
     public function unfavorite($word)
     {
-        Favorite::where('user_id', auth()->id())
-            ->where('word', $word)
-            ->delete();
-
+        $this->favoriteService->removeFavorite($word);
         return response()->noContent();
     }
 }

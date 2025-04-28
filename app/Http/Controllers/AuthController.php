@@ -2,65 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\LoginRequest;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Services\Contracts\UserServiceInterface;
 
 class AuthController extends Controller
 {
-    public function signup(RegisterRequest $request): JsonResponse
+    protected $userService;
+
+    public function __construct(UserServiceInterface $userService)
     {
-        $validated = $request->validated();
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        $token = $user->createToken('auth_token')->accessToken;
-
-        return response()->json([
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email
-                ],
-                'token' => 'Bearer ' . $token
-            ],
-            'message' => 'User created successfully'
-        ], 201);
+        $this->userService = $userService;
     }
 
-    public function signin(LoginRequest $request): JsonResponse
+    public function register(Request $request)
     {
-        $validated = $request->validated();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
+        ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        return response()->json($this->userService->register($request->all()));
+    }
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials',
-                'status' => 401
-            ], 401);
-        }
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
 
-        $token = $user->createToken('auth_token')->accessToken;
-
-        return response()->json([
-            'message' => 'User logged in successfully',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email
-                ],
-                'token' => 'Bearer ' . $token
-            ]
-        ], 200);
+        return response()->json($this->userService->login($request->all()));
     }
 }

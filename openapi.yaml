@@ -1,11 +1,11 @@
 openapi: 3.0.0
 info:
   title: Dictionary API
-  description: API for dictionary management with user authentication and word lookup
+  description: A RESTful API for dictionary management with user authentication and word lookup
   version: 1.0.0
 servers:
-  - url: http://localhost:8000/api
-    description: Local development server
+  - url: /api
+    description: API base URL
 components:
   securitySchemes:
     bearerAuth:
@@ -22,12 +22,14 @@ components:
           type: string
         email:
           type: string
-    Token:
+    Word:
       type: object
       properties:
-        token:
+        word:
           type: string
-    Word:
+        language:
+          type: string
+    History:
       type: object
       properties:
         word:
@@ -35,6 +37,24 @@ components:
         added:
           type: string
           format: date-time
+    Favorite:
+      type: object
+      properties:
+        word:
+          type: string
+        added:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
     PaginatedResponse:
       type: object
       properties:
@@ -55,10 +75,10 @@ components:
 paths:
   /:
     get:
-      summary: Get welcome message
+      summary: Get API status
       responses:
         '200':
-          description: Welcome message
+          description: API is running
           content:
             application/json:
               schema:
@@ -83,25 +103,21 @@ paths:
                 password:
                   type: string
       responses:
-        '201':
-          description: User created successfully
+        '200':
+          description: User registered successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      user:
-                        $ref: '#/components/schemas/User'
-                      token:
-                        $ref: '#/components/schemas/Token'
-                  message:
-                    type: string
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /auth/signin:
     post:
-      summary: Login user
+      summary: Authenticate user
       requestBody:
         required: true
         content:
@@ -115,21 +131,17 @@ paths:
                   type: string
       responses:
         '200':
-          description: User logged in successfully
+          description: User authenticated successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      user:
-                        $ref: '#/components/schemas/User'
-                      token:
-                        $ref: '#/components/schemas/Token'
-                  message:
-                    type: string
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /entries/en:
     get:
       summary: Get list of words
@@ -144,17 +156,40 @@ paths:
           in: query
           schema:
             type: integer
+            default: 10
         - name: page
           in: query
           schema:
             type: integer
+            default: 1
       responses:
         '200':
           description: List of words
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedResponse'
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: string
+                  totalDocs:
+                    type: integer
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  hasNext:
+                    type: boolean
+                  hasPrev:
+                    type: boolean
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /entries/en/{word}:
     get:
       summary: Get word definition
@@ -169,20 +204,27 @@ paths:
       responses:
         '200':
           description: Word definition
+          headers:
+            x-cache:
+              schema:
+                type: string
+                enum: [HIT, MISS]
+            x-response-time:
+              schema:
+                type: integer
+        '404':
+          description: Word not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                  meta:
-                    type: object
-                    properties:
-                      cache:
-                        type: string
-                      responseTime:
-                        type: string
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /entries/en/{word}/favorite:
     post:
       summary: Add word to favorites
       security:
@@ -196,6 +238,13 @@ paths:
       responses:
         '204':
           description: Word added to favorites
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /entries/en/{word}/unfavorite:
     delete:
       summary: Remove word from favorites
       security:
@@ -209,6 +258,12 @@ paths:
       responses:
         '204':
           description: Word removed from favorites
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/me:
     get:
       summary: Get user profile
@@ -221,6 +276,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/me/history:
     get:
       summary: Get user search history
@@ -231,13 +292,15 @@ paths:
           in: query
           schema:
             type: integer
+            default: 10
         - name: page
           in: query
           schema:
             type: integer
+            default: 1
       responses:
         '200':
-          description: User search history
+          description: User history
           content:
             application/json:
               schema:
@@ -246,7 +309,7 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Word'
+                      $ref: '#/components/schemas/History'
                   totalDocs:
                     type: integer
                   page:
@@ -257,6 +320,12 @@ paths:
                     type: boolean
                   hasPrev:
                     type: boolean
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/me/favorites:
     get:
       summary: Get user favorites
@@ -267,10 +336,12 @@ paths:
           in: query
           schema:
             type: integer
+            default: 10
         - name: page
           in: query
           schema:
             type: integer
+            default: 1
       responses:
         '200':
           description: User favorites
@@ -282,7 +353,7 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Word'
+                      $ref: '#/components/schemas/Favorite'
                   totalDocs:
                     type: integer
                   page:
@@ -293,3 +364,9 @@ paths:
                     type: boolean
                   hasPrev:
                     type: boolean
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

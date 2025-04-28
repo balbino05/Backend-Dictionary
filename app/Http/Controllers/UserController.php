@@ -3,73 +3,44 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\History;
-use App\Models\Favorite;
+use App\Services\Contracts\UserServiceInterface;
+use App\Services\Contracts\HistoryServiceInterface;
+use App\Services\Contracts\FavoriteServiceInterface;
 
 class UserController extends Controller
 {
-    public function profile()
-    {
-        return auth()->user();
+    protected $userService;
+    protected $historyService;
+    protected $favoriteService;
+
+    public function __construct(
+        UserServiceInterface $userService,
+        HistoryServiceInterface $historyService,
+        FavoriteServiceInterface $favoriteService
+    ) {
+        $this->userService = $userService;
+        $this->historyService = $historyService;
+        $this->favoriteService = $favoriteService;
     }
 
-    public function history(Request $request)
+    public function getProfile()
+    {
+        return response()->json($this->userService->getProfile());
+    }
+
+    public function getHistory(Request $request)
     {
         $limit = (int) $request->query('limit', 10);
         $page = (int) $request->query('page', 1);
 
-        $query = History::where('user_id', auth()->id())
-            ->orderByDesc('created_at');
-
-        $totalDocs = $query->count();
-        $totalPages = ceil($totalDocs / $limit);
-
-        $history = $query->skip(($page - 1) * $limit)
-            ->take($limit)
-            ->get();
-
-        return response()->json([
-            'results' => $history->map(function ($item) {
-                return [
-                    'word' => $item->word,
-                    'added' => $item->searched_at
-                ];
-            }),
-            'totalDocs' => $totalDocs,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'hasNext' => $page < $totalPages,
-            'hasPrev' => $page > 1
-        ]);
+        return response()->json($this->historyService->getUserHistory($limit, $page));
     }
 
-    public function favorites(Request $request)
+    public function getFavorites(Request $request)
     {
         $limit = (int) $request->query('limit', 10);
         $page = (int) $request->query('page', 1);
 
-        $query = Favorite::where('user_id', auth()->id())
-            ->orderByDesc('created_at');
-
-        $totalDocs = $query->count();
-        $totalPages = ceil($totalDocs / $limit);
-
-        $favorites = $query->skip(($page - 1) * $limit)
-            ->take($limit)
-            ->get();
-
-        return response()->json([
-            'results' => $favorites->map(function ($item) {
-                return [
-                    'word' => $item->word,
-                    'added' => $item->created_at
-                ];
-            }),
-            'totalDocs' => $totalDocs,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'hasNext' => $page < $totalPages,
-            'hasPrev' => $page > 1
-        ]);
+        return response()->json($this->favoriteService->getUserFavorites($limit, $page));
     }
 }
